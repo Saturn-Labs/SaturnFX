@@ -1,9 +1,7 @@
-[submodule "Vendor/glfw"]
-	path = Vendor/glfw
+
+[submodule "external/glfw"]
+	path = external/glfw
 	url = https://github.com/glfw/glfw
-[submodule "Vendor/glm"]
-	path = Vendor/glm
-	url = https://github.com/g-truc/glm
-[submodule "Vendor/spdlog"]
-	path = Vendor/spdlog
+[submodule "external/spdlog"]
+	path = external/spdlog
 	url = https://github.com/gabime/spdlog
