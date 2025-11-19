@@ -7,10 +7,11 @@ namespace saturnfx::Windowing {
 
 namespace saturnfx::Graphics {
     class GraphicsContext {
-        std::weak_ptr<Windowing::Window> m_Window;
+        friend class Windowing::Window;
+        Windowing::Window& m_Window;
 
-        explicit GraphicsContext(const std::shared_ptr<Windowing::Window>& window);
+        explicit GraphicsContext(Windowing::Window& window);
     public:
-        ~GraphicsContext();
+        ~GraphicsContext() = default;
     };
 }

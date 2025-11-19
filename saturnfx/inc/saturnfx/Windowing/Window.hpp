@@ -7,21 +7,33 @@
 #include "saturnfx/Graphics/Command/CommandQueue.hpp"
 #include "saturnfx/Windowing/WindowProperties.hpp"
 
+namespace saturnfx::Eventing {
+    class IEventListener;
+}
+
 namespace saturnfx::Windowing {
-    class Window :
-        public Eventing::IEventSource
+    class Window final :
+        public Eventing::IEventSource,
+        public std::enable_shared_from_this<Window>
     {
         GLFWwindow* m_Window = nullptr;
         std::thread m_WindowThread;
         Graphics::GraphicsContext m_GraphicsContext;
         Graphics::CommandQueue m_CommandQueue;
 
+        std::mutex m_ListenersMutex;
+        std::vector<std::shared_ptr<Eventing::IEventListener>> m_Listeners;
+
         explicit Window(const WindowProperties& props);
         void run();
 
     public:
         ~Window() override;
+        virtual void triggerEvent(const std::shared_ptr<Eventing::IEvent>& event);
+        virtual void addListener(const std::shared_ptr<Eventing::IEventListener>& listener);
+        virtual void removeListener(const std::shared_ptr<Eventing::IEventListener>& listener);
+        virtual std::string getName();
 
-        std::shared_ptr<Window> create(const WindowProperties& props);
+        static std::shared_ptr<Window> create(const WindowProperties& props);
     };
 }

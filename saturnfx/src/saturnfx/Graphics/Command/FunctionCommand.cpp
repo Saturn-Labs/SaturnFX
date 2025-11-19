@@ -15,7 +15,7 @@ namespace saturnfx::Graphics {
         return m_Command;
     }
 
-    CommandReturn FunctionCommand::execute(const CommandContext &context) const {
+    CommandReturn FunctionCommand::execute(const CommandContext &context) {
         if (m_Command)
             return m_Command(context);
         return CommandReturn();

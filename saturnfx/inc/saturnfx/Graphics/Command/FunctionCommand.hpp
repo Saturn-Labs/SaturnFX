@@ -16,6 +16,6 @@ namespace saturnfx::Graphics {
 
         void setCommand(const FunctionType& command);
         const FunctionType& getCommand() const;
-        CommandReturn execute(const CommandContext& context) const;
+        CommandReturn execute(const CommandContext& context) override;
     };
 }

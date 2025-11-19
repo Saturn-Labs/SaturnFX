@@ -15,7 +15,6 @@ namespace saturnfx::Windowing {
         uint32_t height;
         bool shouldVSync = true;
         GLFWmonitor* monitor = nullptr;
-        GLFWwindow* share = nullptr;
         bool resizable = true;
         bool visible = true;
         bool decorated = true;

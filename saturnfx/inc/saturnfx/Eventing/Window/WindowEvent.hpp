@@ -1,9 +1,12 @@
 #pragma once
+#include <memory>
+
 #include "saturnfx/Eventing/ConsumableEvent.hpp"
 #include "saturnfx/Eventing/EventType.hpp"
 #include "saturnfx/Utils/FixedString.hpp"
 
 namespace saturnfx::Eventing {
+    class IEventSource;
     /**
      * @brief Represents a base window event class that other window event classes can inherit from.
      * @tparam Type The type of the window event.

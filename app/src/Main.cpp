@@ -8,7 +8,7 @@
 
 #include "saturnfx/Debugging/Log.hpp"
 #include "saturnfx/Eventing/FunctionalEventListener.hpp"
-#include "saturnfx/Eventing/Window/WindowCloseEvent.hpp"
+#include "saturnfx/Windowing/Window.hpp"
 
 using namespace saturnfx;
 
@@ -19,22 +19,12 @@ int main() {
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Hello World", nullptr, nullptr);
-    glfwMakeContextCurrent(window);
+    auto window = Windowing::Window::create({
+        .title = "Hello Window",
+        .width = 640,
+        .height = 480,
+    });
 
-    if (!gladLoadGL(glfwGetProcAddress))
-        return -1;
-
-
-
-    while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    std::cin.get();
     return 0;
 }

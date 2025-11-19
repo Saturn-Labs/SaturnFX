@@ -6,5 +6,6 @@ namespace saturnfx::Eventing {
      */
     enum class EventType {
         Invalid = -1, ///< Unknown/Invalid event
+        WindowClose
     };
 }

@@ -3,7 +3,8 @@
 
 namespace saturnfx::Eventing {
     class IEvent;
-    class IEventSource : std::enable_shared_from_this<IEventSource> {
+    class IEventListener;
+    class IEventSource {
     public:
         virtual ~IEventSource() = default;
         virtual void triggerEvent(const std::shared_ptr<IEvent>& event) = 0;
