@@ -25,19 +25,3 @@ target_link_libraries(app
         PRIVATE
         saturnfx
 )
-set_target_properties(
-        app
-        PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/app/${CMAKE_BUILD_TYPE}
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/app/${CMAKE_BUILD_TYPE}
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/app/${CMAKE_BUILD_TYPE}
-)
-
-add_custom_command(
-        TARGET app
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/assets
-        ${CMAKE_SOURCE_DIR}/output/app/${CMAKE_BUILD_TYPE}/assets
-        COMMENT "Assets copied to output folder."
-)

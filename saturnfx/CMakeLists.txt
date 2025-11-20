@@ -46,18 +46,11 @@ target_link_libraries(saturnfx
         glad
         spdlog::spdlog
 )
+
 target_compile_definitions(saturnfx
         PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         GLFW_INCLUDE_NONE
-)
-
-set_target_properties(
-        saturnfx
-        PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/saturnfx/${CMAKE_BUILD_TYPE}
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/saturnfx/${CMAKE_BUILD_TYPE}
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output/saturnfx/${CMAKE_BUILD_TYPE}
 )
 
 target_precompile_headers(saturnfx PUBLIC "${SOURCE_DIR}/pch.hpp")

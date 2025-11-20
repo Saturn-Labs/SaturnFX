@@ -1,64 +1,164 @@
 #include "pch.hpp"
 #include "saturnfx/Debugging/Log.hpp"
-#include <utility>
+
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace saturnfx {
-    std::shared_ptr<spdlog::logger> Log::s_ConsoleLogger = nullptr;
-    std::mutex Log::s_InitMutex;
+    SharedMutex Log::sMutex = {};
+    LogProperties Log::sProps = {};
+    Ref<spdlog::logger> Log::sLogger = nullptr;
+    bool Log::sFailedInit = false;
 
-    void Log::init(const LogOptions& options) {
-        std::lock_guard lock(s_InitMutex);
-        if (s_ConsoleLogger)
-            return;
-        s_ConsoleLogger = spdlog::stdout_color_mt(options.name);
-        s_ConsoleLogger->set_pattern("%^[%T] [%l] %v%$");
-        spdlog::set_level(spdlog::level::trace);
-    }
+    void Log::write(const LogSeverity severity, const String& message) {
+        Ref<spdlog::logger> loggerCopy;
+        bool logInitialized = false;
 
-    void Log::trace(const std::string& message) {
-        s_ConsoleLogger->trace(message);
-    }
+        {
+            SharedLock read(sMutex);
+            loggerCopy = sLogger;
+            logInitialized = sFailedInit || loggerCopy != nullptr;
+        }
 
-    void Log::info(const std::string& message) {
-        s_ConsoleLogger->info(message);
-    }
+        if (!logInitialized)
+            ensureInit();
 
-    void Log::warn(const std::string& message) {
-        s_ConsoleLogger->warn(message);
-    }
+        if (!loggerCopy) {
+            SharedLock read(sMutex);
+            loggerCopy = sLogger;
+        }
 
-    void Log::error(const std::string& message) {
-        s_ConsoleLogger->error(message);
-    }
-
-    void Log::debug(const std::string& message) {
+        switch (severity) {
+            case LogSeverity::Debug:
 #ifdef DEBUG
-        trace(message);
+                loggerCopy->debug(message);
 #endif
-    }
-
-    void Log::assertFail(const bool condition, const std::string& message) {
-        if (!condition) {
-            error(message);
-#ifdef DEBUG
-            debugBreak();
-#endif
+                break;
+            case LogSeverity::Trace:
+                loggerCopy->trace(message);
+                break;
+            case LogSeverity::Info:
+                loggerCopy->info(message);
+                break;
+            case LogSeverity::Warning:
+                loggerCopy->warn(message);
+                break;
+            case LogSeverity::Error:
+                loggerCopy->error(message);
+                break;
+            case LogSeverity::Critical:
+                loggerCopy->critical(message);
+                std::terminate();
         }
     }
 
-    void Log::assertFail(const std::string& message) {
-        error(message);
+    void Log::debug(const String& message) {
+        write(LogSeverity::Debug, message);
+    }
+
+    void Log::trace(const String& message) {
+        write(LogSeverity::Trace, message);
+    }
+
+    void Log::info(const String& message) {
+        write(LogSeverity::Info, message);
+    }
+
+    void Log::warning(const String& message) {
+        write(LogSeverity::Warning, message);
+    }
+
+    void Log::error(const String& message) {
+        write(LogSeverity::Error, message);
+    }
+
+    void Log::critical(const String& message) {
+        write(LogSeverity::Critical, message);
+    }
+
+    void Log::debugBreak() {
 #ifdef DEBUG
-        debugBreak();
-        std::unreachable();
+        DEBUG_BREAK();
+#else
+        std::terminate();
 #endif
     }
 
-    void Log::shutdown() {
-        std::lock_guard lock(s_InitMutex);
-        if (!s_ConsoleLogger)
+    void Log::assertFail(const String& message) {
+        error(message);
+        debugBreak();
+        std::unreachable();
+    }
+
+    void Log::setProperties(const LogProperties& props) {
+        sProps = props;
+        shutdownInternal();
+        ensureInit();
+    }
+
+    bool Log::ensureInit() {
+        UniqueLock lock(sMutex);
+        try {
+            initInternal();
+            return true;
+        }
+        catch (...) {
+            sLogger = spdlog::default_logger();
+            sFailedInit = true;
+
+            sLogger->info("Failed to initialize logging system.");
+            sLogger->info("Using fallback!");
+            return false;
+        }
+    }
+
+    void Log::initInternal() {
+        if (sLogger)
             return;
-        s_ConsoleLogger.reset();
-        spdlog::shutdown();
+
+        Vector<spdlog::sink_ptr> sinks;
+
+        const auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        consoleSink->set_level(spdlog::level::trace);
+        consoleSink->set_pattern("%^[%T] [%l] %v%$");
+        sinks.push_back(consoleSink);
+
+        if (!sProps.LogFile.empty()) {
+            const auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(sProps.LogFile, true);
+            fileSink->set_level(spdlog::level::trace);
+            sinks.push_back(fileSink);
+        }
+
+        for (const auto& s : sProps.AdditionalSinks)
+            sinks.push_back(s);
+
+        sLogger = std::make_shared<spdlog::logger>(sProps.Name, sinks.begin(), sinks.end());
+        sLogger->set_level(spdlog::level::trace);
+        sLogger->flush_on(spdlog::level::err);
+
+        spdlog::register_logger(sLogger);
+        spdlog::set_default_logger(sLogger);
+    }
+
+    void Log::shutdownInternal() {
+        UniqueLock lock(sMutex);
+
+        if (!sLogger) {
+            sFailedInit = false;
+            return;
+        }
+
+        try {
+            sLogger->flush();
+            spdlog::drop(sProps.Name);
+            sLogger.reset();
+            sFailedInit = false;
+        }
+        catch (...) {
+            // This should never really fail, but hey, safety.
+            sLogger.reset();
+            sFailedInit = false;
+        }
     }
 }
